@@ -1,33 +1,29 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+
+client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 
-# Configure Gemini using Streamlit Secrets
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-
-# Load Gemini model
-model = genai.GenerativeModel("gemini-2.5-flash")
-
-
-def get_assistant_response(question: str, history=None, *args, **kwargs) -> str:
+def get_assistant_response(question: str, history=None, *args, **kwargs):
     if not question.strip():
-        return "Please ask a question so I can help."
+        return "Please ask a question."
 
-    # Convert history to Gemini-friendly format
-    chat_history = []
+    conversation = ""
 
-    if history: 
-        for msg in history:       
-            role = "model" if msg["role"] == "assistant" else "user"
-            chat_history.append({
-                "role": role,
-                "parts": [msg["content"]]
-            })
+    if history:
+        for msg in history:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            conversation += f"{role}: {msg['content']}\n"
+
+    conversation += f"User: {question}"
 
     try:
-        chat = model.start_chat(history=chat_history)
-        response = chat.send_message(question)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=conversation
+        )
+
         return response.text
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error: {e}"
