@@ -1,6 +1,7 @@
 streamlit
 google-generativeai
 torch
+torchvision
 diffusers
 transformers
 accelerate
