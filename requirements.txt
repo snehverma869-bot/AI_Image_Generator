@@ -1,0 +1,11 @@
+streamlit
+torch
+diffusers
+transformers
+accelerate
+pillow
+rembg[cpu]
+pandas
+plotly
+sqlite3worker
+
