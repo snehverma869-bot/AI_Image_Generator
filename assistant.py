@@ -1,43 +1,33 @@
-import ollama
+import streamlit as st
+import google.generativeai as genai
 
-def get_assistant_response(question: str) -> str:
+
+# Configure Gemini using Streamlit Secrets
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+# Load Gemini model
+model = genai.GenerativeModel("gemini-2.5-flash")
+
+
+def get_assistant_response(question: str, history=None, *args, **kwargs) -> str:
     if not question.strip():
-        return "Please ask a question."
+        return "Please ask a question so I can help."
 
-    system_prompt = """
-You are ChatGPT-like AI Assistant.
+    # Convert history to Gemini-friendly format
+    chat_history = []
 
-Rules:
-- Always answer in detail.
-- Never give one-line answers.
-- Explain everything step by step.
-- Use headings and bullet points whenever appropriate.
-- If asked to write a story, write at least 700 words.
-- If asked to explain a topic, explain with examples.
-- Do not repeat the user's prompt.
-"""
+    if history: 
+        for msg in history:       
+            role = "model" if msg["role"] == "assistant" else "user"
+            chat_history.append({
+                "role": role,
+                "parts": [msg["content"]]
+            })
 
     try:
-        response = ollama.chat(
-            model="llama3",
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": question
-                }
-            ],
-            options={
-                "temperature": 0.8,
-                "num_predict": 1024,
-                "top_p": 0.9
-            }
-        )
-
-        return response["message"]["content"]
+        chat = model.start_chat(history=chat_history)
+        response = chat.send_message(question)
+        return response.text
 
     except Exception as e:
-        return str(e)
+        return f"Error: {str(e)}"
